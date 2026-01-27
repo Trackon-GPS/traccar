@@ -1,12 +1,18 @@
 name: Build Release
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       version:
         description: Version
         required: true
         default: preview
+
+env:
+  VERSION: ${{ github.event.inputs.version || '6.9.1' }}
 
 jobs:
   build:
@@ -44,7 +50,7 @@ jobs:
           wget -q "$JDK_BASE/OpenJDK21U-jdk_x64_linux_hotspot_${JDK_VERSION/+/_}.tar.gz"
           wget -q "$JDK_BASE/OpenJDK21U-jdk_aarch64_linux_hotspot_${JDK_VERSION/+/_}.tar.gz"
           wget -q http://files.jrsoftware.org/is/5/isetup-5.5.6.exe
-          ./package.sh ${{ github.event.inputs.version }}
+          ./package.sh ${{ env.VERSION }}
         working-directory: ./setup
       - uses: actions/upload-artifact@v4
         with:
@@ -56,7 +62,7 @@ jobs:
   upload:
     name: Upload installers
     needs: build
-    if: ${{ github.event.inputs.version == 'preview' }}
+    if: ${{ github.event_name == 'push' || github.event.inputs.version == 'preview' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -70,7 +76,7 @@ jobs:
   release:
     name: Create release with installers
     needs: build
-    if: ${{ github.event.inputs.version != 'preview' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version != 'preview' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,13 +85,12 @@ jobs:
       - uses: actions/download-artifact@v4
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.event.inputs.version }}
+          tag_name: v${{ env.VERSION }}
           files: installers/traccar-*.zip
 
   docker:
     name: Build and push docker images
     needs: build
-    if: ${{ github.event.inputs.version != 'preview' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -118,21 +123,21 @@ jobs:
             traccar/traccar
             ghcr.io/traccar/traccar
           tags: |
-            type=semver,pattern={{major}}.{{minor}}.{{patch}},suffix=-${{ matrix.os }},value=v${{ github.event.inputs.version }}
-            type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.os }},value=v${{ github.event.inputs.version }}
-            type=semver,pattern={{major}},suffix=-${{ matrix.os }},value=v${{ github.event.inputs.version }}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}},value=v${{ github.event.inputs.version }},enable=${{ matrix.os == 'alpine' }}
-            type=semver,pattern={{major}}.{{minor}},value=v${{ github.event.inputs.version }},enable=${{ matrix.os == 'alpine' }}
-            type=semver,pattern={{major}},value=v${{ github.event.inputs.version }},enable=${{ matrix.os == 'alpine' }}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},suffix=-${{ matrix.os }},value=v${{ env.VERSION }}
+            type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.os }},value=v${{ env.VERSION }}
+            type=semver,pattern={{major}},suffix=-${{ matrix.os }},value=v${{ env.VERSION }}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}},value=v${{ env.VERSION }},enable=${{ matrix.os == 'alpine' }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ env.VERSION }},enable=${{ matrix.os == 'alpine' }}
+            type=semver,pattern={{major}},value=v${{ env.VERSION }},enable=${{ matrix.os == 'alpine' }}
             type=raw,value=latest,enable=${{ matrix.os == 'alpine' }}
             type=raw,value=${{ matrix.os }}
           labels: |
-            org.opencontainers.image.version=${{ github.event.inputs.version }}
+            org.opencontainers.image.version=${{ env.VERSION }}
       - uses: docker/build-push-action@v6
         with:
           context: docker
           file: docker/Dockerfile.${{ matrix.os }}
-          build-args: VERSION=${{ github.event.inputs.version }}
+          build-args: VERSION=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: ${{ matrix.platforms }}
