@@ -120,8 +120,8 @@ jobs:
         with:
           flavor: latest=false
           images: |
-            traccar/traccar
-            ghcr.io/traccar/traccar
+            trackon/trackon-main
+            ghcr.io/trackon-gps/traccar
           tags: |
             type=semver,pattern={{major}}.{{minor}}.{{patch}},suffix=-${{ matrix.os }},value=v${{ env.VERSION }}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.os }},value=v${{ env.VERSION }}
