@@ -445,13 +445,13 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
             case 0x18 -> modelLW ? Position.ALARM_ACCIDENT : Position.ALARM_REMOVING;
             case 0x19 -> modelLW ? Position.ALARM_ACCELERATION : Position.ALARM_LOW_BATTERY;
             case 0x1A, 0x27 -> Position.ALARM_BRAKING;
-            case 0x1B, 0x2A, 0x2B, 0x2E -> Position.ALARM_CORNERING;
+            case 0x1B, 0x2A, 0x2B, 0x2E, 0x4C -> Position.ALARM_CORNERING;
             case 0x23 -> Position.ALARM_FALL_DOWN;
             case 0x26 -> Position.ALARM_ACCELERATION;
             case 0x28 -> modelSW ? Position.ALARM_CORNERING : Position.ALARM_BRAKING;
-            case 0x29 -> modelSW ? Position.ALARM_ACCIDENT : Position.ALARM_ACCELERATION;
+            case 0x29 -> Position.ALARM_ACCELERATION;
             case 0x2C -> Position.ALARM_ACCIDENT;
-            case 0x30 -> modelVL ? Position.ALARM_BRAKING : Position.ALARM_JAMMING;
+            case 0x30 -> Position.ALARM_BRAKING;
             default -> null;
         };
     }
